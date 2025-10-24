@@ -6,7 +6,7 @@ interface AuthLayoutProps {
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
   return (
-    <div className="auth-layout">
+    <div className="auth-layout" style={{ margin: 0, padding: 0, width: '100%', height: '100%' }}>
       {children}
     </div>
   );

@@ -38,7 +38,7 @@ const LoginForm: React.FC = () => {
       const from = state.from?.pathname || '/';
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [ isAuthenticated, navigate, location ]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -51,7 +51,16 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-gradient bg-light">
+    <div
+      className="min-vh-100 d-flex align-items-center justify-content-center bg-light"
+      style={{
+        margin: 0,
+        padding: '20px',
+        width: '100vw',
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}
+    >
       <div className="card shadow-lg border-0 rounded-4" style={{ width: '100%', maxWidth: '420px', backgroundColor: 'white' }}>
         <div className="card-body p-5">
           {/* Logo y título */}
