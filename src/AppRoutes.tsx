@@ -1,47 +1,41 @@
+// src/AppRoutes.tsx
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@modules/auth/hooks/useAuth';
 import ProtectedRoute from '@core/utils/routes/ProtectedRoute';
 
 // Layouts
-import DashboardLayout from '@modules/auth/components/layout/DashboardLayout';
-import AuthLayout from '@modules/auth/components/layout/AuthLayout';
+import DashboardLayout from '@/layout/DashboardLayout';
+import AuthLayout from '@/layout/AuthLayout';
 
-// Auth Pages
-import LoginForm from '@modules/auth/components/LoginForm';
+// 🧩 Importaciones de páginas wrapper actualizadas
+import HomePage from '@modules/home/pages/HomePage';
+import LoginPage from '@modules/auth/pages/LoginPage';
+import EmployeeListPage from '@modules/employees/pages/EmployeeListPage';
+import EmployeeDetailPage from '@modules/employees/pages/EmployeeDetailPage';
+import PayrollListPage from '@modules/payroll/pages/PayrollListPage';
+import PayrollDetailPage from '@modules/payroll/pages/PayrollDetailPage';
+import DocumentListPage from '@modules/documents/pages/DocumentListPage';
+import ReportGeneratorPage from '@modules/reports/pages/ReportGeneratorPage';
 
-// Importamos los componentes reales de Employees
-import EmployeeList from '@modules/employees/components/EmployeeList';
+// 🧱 Componentes que ya usabas
 import EmployeeForm from '@modules/employees/components/EmployeeForm';
-// Agregamos esta importación para la nueva ruta de detalle
-import EmployeeDetail from '@modules/employees/components/EmployeeDetail'; 
+import PayrollForm from '@modules/payroll/components/PayrollForm';
+import Dashboard from '@modules/dashboard/components/Dashboard';
 
-// Placeholder components para los próximos módulos
-const DashboardPage = () => (
-  <div className="container-fluid">
-    <h2>Dashboard Principal</h2>
-    <p>Bienvenido al sistema de Gestión de Recursos Humanos</p>
-    {/* Aquí irán los KPIs por rol */}
+// 🧰 Página 404 simple
+const NotFoundPage = () => (
+  <div className="container mt-5">
+    <div className="alert alert-warning text-center">
+      <h4>⚠️ Página No Encontrada</h4>
+      <p>La página que buscas no existe o fue movida.</p>
+    </div>
   </div>
-);
-
-const PayrollPage = () => <div>Nómina - Próximamente</div>;
-const DocumentsPage = () => <div>Documentos - Próximamente</div>;
-
-// NUEVAS PÁGINAS PARA EMPLEADOS
-const EmployeesPage = () => <EmployeeList />;
-
-const CreateEmployeePage = () => (
-  <EmployeeForm
-    onSuccess={() => window.history.back()}
-    onCancel={() => window.history.back()}
-  />
 );
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Loading state similar a tu backend startup
   if (isLoading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -54,39 +48,51 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Rutas Públicas */}
-      <Route 
-        path="/login" 
+      {/* 🔓 Rutas Públicas */}
+      <Route
+        path="/login"
         element={
           !isAuthenticated ? (
             <AuthLayout>
-              <LoginForm />
+              <LoginPage />
             </AuthLayout>
           ) : (
-            <Navigate to="/dashboard" replace />
+            <Navigate to="/" replace />
           )
-        } 
+        }
       />
 
-      {/* Rutas Protegidas */}
+      {/* 🏠 Página principal (Home) */}
       <Route
-        path="/dashboard"
+        path="/"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'RRHH', 'EMPLEADO']}>
             <DashboardLayout>
-              <DashboardPage />
+              <HomePage />
             </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* RUTAS DE EMPLEADOS */}
+      {/* 📊 Dashboard (mantienes tu ruta actual) */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'RRHH', 'EMPLEADO']}>
+            <DashboardLayout>
+              <Dashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 👥 Empleados */}
       <Route
         path="/employees"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
             <DashboardLayout>
-              <EmployeesPage />
+              <EmployeeListPage />
             </DashboardLayout>
           </ProtectedRoute>
         }
@@ -97,13 +103,15 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
             <DashboardLayout>
-              <CreateEmployeePage />
+              <EmployeeForm
+                onSuccess={() => window.history.back()}
+                onCancel={() => window.history.back()}
+              />
             </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* 🟩 NUEVA RUTA DE EDICIÓN DE EMPLEADO */}
       <Route
         path="/employees/edit/:id"
         element={
@@ -115,57 +123,80 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* RUTA DINÁMICA DE DETALLE DE EMPLEADO */}
       <Route
         path="/employees/:id"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
             <DashboardLayout>
-              <EmployeeDetail />
+              <EmployeeDetailPage />
             </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* Nómina */}
+      {/* 💰 Nómina */}
       <Route
         path="/payroll"
         element={
           <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
             <DashboardLayout>
-              <PayrollPage />
+              <PayrollListPage />
             </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* Documentos */}
+      <Route
+        path="/payroll/new"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
+            <DashboardLayout>
+              <PayrollForm />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/payroll/:id"
+        element={
+          <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
+            <DashboardLayout>
+              <PayrollDetailPage />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 📁 Documentos */}
       <Route
         path="/documents"
         element={
-          <ProtectedRoute requiredRoles={['ADMIN']}>
+          <ProtectedRoute requiredRoles={['ADMIN', 'RRHH', 'EMPLEADO']}>
             <DashboardLayout>
-              <DocumentsPage />
+              <DocumentListPage />
             </DashboardLayout>
           </ProtectedRoute>
         }
       />
 
-      {/* Ruta por defecto */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-      {/* 404 */}
+      {/* 📈 Reportes */}
       <Route
-        path="*"
+        path="/reports"
         element={
-          <div className="container mt-5">
-            <div className="alert alert-warning text-center">
-              <h4>Página No Encontrada</h4>
-              <p>La página que buscas no existe.</p>
-            </div>
-          </div>
+          <ProtectedRoute requiredRoles={['ADMIN', 'RRHH']}>
+            <DashboardLayout>
+              <ReportGeneratorPage />
+            </DashboardLayout>
+          </ProtectedRoute>
         }
       />
+
+      {/* 🔄 Redirección por defecto */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* 🚫 Página 404 */}
+      <Route path="/404" element={<NotFoundPage />} />
     </Routes>
   );
 };

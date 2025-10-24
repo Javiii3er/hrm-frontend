@@ -8,7 +8,7 @@ export class ApiClient {
   constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:4000/api') {
     this.client = axios.create({
       baseURL,
-      timeout: 10000,
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -53,8 +53,7 @@ export class ApiClient {
     localStorage.removeItem('refreshToken');
   }
 
-  async get<T, P extends Record<string, string | number | boolean | undefined> = Record<string, never>
->(
+  async get<T, P extends Record<string, string | number | boolean | undefined> = Record<string, never>>(
     url: string,
     params?: P
   ): Promise<ApiResponse<T>> {

@@ -1,14 +1,13 @@
+// src/core/utils/routes/ProtectedRoute.tsx
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 
-// Props que reflejan tu authorize middleware
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: string[];
 }
 
-// Componente que protege rutas como tu middleware
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requiredRoles = [] 
@@ -16,12 +15,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, user, hasRole } = useAuth();
   const location = useLocation();
 
-  // No autenticado - redirigir a login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Verificar roles - igual que tu authorize middleware
   if (requiredRoles.length > 0 && !hasRole(requiredRoles)) {
     return (
       <div className="container mt-5">

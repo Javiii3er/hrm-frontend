@@ -16,12 +16,10 @@ export interface ApiError {
   error: {
     code: string;
     message: string;
-    // CORRECCIÓN ESLINT/TS: unknown en lugar de any
     details?: unknown;
   };
 }
 
-// Auth Types (de tus schemas)
 export interface LoginRequest {
   email: string;
   password: string;
@@ -43,7 +41,6 @@ export interface User {
   updatedAt: string;
 }
 
-// Employee Types (de tu Prisma schema)
 export interface Employee {
   id: string;
   nationalId: string;

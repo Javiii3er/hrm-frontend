@@ -37,6 +37,7 @@ export interface PayrollQuery {
   endDate?: string;
   department?: string;
   status?: string;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface PayrollResponse {

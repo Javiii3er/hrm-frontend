@@ -32,7 +32,7 @@ export const useEmployees = () => {
   setError(null);
 
   try {
-    const response = await apiClient.get<Employee[], EmployeeQuery>(`/employees`, query);
+    const response = await apiClient.get<Employee[], EmployeeQuery>(`employees`, query);
 
     if (response.success) {
       setEmployees(response.data);
@@ -55,7 +55,7 @@ export const useEmployees = () => {
     setError(null);
     
     try {
-      const response = await apiClient.get<Employee>(`/employees/${id}`);
+      const response = await apiClient.get<Employee>(`employees/${id}`);
       
       if (response.success) {
         return response.data;
@@ -76,7 +76,7 @@ export const useEmployees = () => {
     setError(null);
     
     try {
-      const response = await apiClient.post<Employee>('/employees', employeeData);
+      const response = await apiClient.post<Employee>('employees', employeeData);
       
       if (response.success) {
         setEmployees(prev => [...prev, response.data]);
@@ -98,7 +98,7 @@ export const useEmployees = () => {
     setError(null);
     
     try {
-      const response = await apiClient.put<Employee>(`/employees/${id}`, employeeData);
+      const response = await apiClient.put<Employee>(`employees/${id}`, employeeData);
       
       if (response.success) {
         setEmployees(prev => prev.map(emp => 
@@ -123,7 +123,7 @@ export const useEmployees = () => {
     
     try {
       // El tipo T en ApiResponse<T> para DELETE se establece en un objeto vacío o null.
-      const response = await apiClient.delete<object>(`/employees/${id}`);
+      const response = await apiClient.delete<object>(`employees/${id}`);
       
       if (response.success) {
         setEmployees(prev => prev.filter(emp => emp.id !== id));

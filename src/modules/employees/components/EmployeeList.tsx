@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useEmployees } from '../hooks/useEmployees'; 
 import { EmployeeQuery, Employee } from '../types/employee';
 
-// Importamos el componente de Alerta de Bootstrap
-// Nota: Se reemplazó window.confirm/alert por un placeholder
-// En un entorno real, usaríamos un modal o toast.
 const CustomAlert = ({ message, onClose }: { message: string, onClose: () => void }) => (
   <div className="alert alert-warning d-flex align-items-center" role="alert">
     <i className="bi bi-exclamation-triangle-fill me-2"></i>
@@ -27,32 +24,30 @@ const EmployeeList: React.FC = () => {
     department: ''
   });
 
-  // Estado para manejar la confirmación de eliminación (reemplazando window.confirm)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // --- Lógica de Carga de Datos ---
-  // Cargar empleados al montar el componente (para la carga inicial)
+
   useEffect(() => {
     fetchEmployees(query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
-  // Recargar empleados cada vez que el objeto 'query' cambia
+
   useEffect(() => {
     fetchEmployees(query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [query]);
   
-  // --- Manejadores ---
+
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Siempre resetear a la página 1 cuando se ejecuta una nueva búsqueda/filtro
+
     setQuery(prev => ({ ...prev, page: 1 }));
   };
 
   const initiateDelete = (id: string) => {
-    // Usamos el estado local para mostrar la confirmación personalizada
+
     setConfirmDeleteId(id);
   };
   
@@ -61,9 +56,9 @@ const EmployeeList: React.FC = () => {
 
     try {
       await deleteEmployee(confirmDeleteId);
-      // En un entorno real, usarías un sistema de toast/notificación
+
       console.log('Empleado eliminado con éxito (placeholder de notificación).'); 
-      // El hook 'useEmployees' debería encargarse de actualizar la lista automáticamente
+
     } catch (error) {
       console.error('Error eliminando empleado:', error);
     } finally {
@@ -95,7 +90,7 @@ const EmployeeList: React.FC = () => {
         <button 
           className="btn btn-primary"
           onClick={() => navigate('/employees/new')} 
-          disabled={loading} // ✅ Deshabilita mientras carga
+          disabled={loading} 
         >
           <i className="bi bi-plus-circle me-2"></i>
           Nuevo Empleado
@@ -160,7 +155,7 @@ const EmployeeList: React.FC = () => {
         <div className="alert alert-danger alert-dismissible fade show" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
-          {/* ✅ Cierra el alert llamando a clearError del hook */}
+          {/*  Cierra el alert llamando a clearError del hook */}
           <button 
             type="button" 
             className="btn-close" 
@@ -192,7 +187,7 @@ const EmployeeList: React.FC = () => {
       {/* Tabla de Empleados */}
       <div className="card">
         <div className="card-body">
-          {/* ✅ Muestra el mensaje si no hay datos Y la carga ha terminado */}
+          {/* Muestra el mensaje si no hay datos Y la carga ha terminado */}
           {employees.length === 0 && !loading ? (
             <div className="text-center py-5">
               <i className="bi bi-people display-1 text-muted"></i>
@@ -237,7 +232,7 @@ const EmployeeList: React.FC = () => {
                       </td>
                       <td>
                         <div className="btn-group btn-group-sm">
-                          {/* ✅ Botón Ver (navega a detalle) - CAMBIO IMPLEMENTADO AQUÍ */}
+                          {/* Botón Ver (navega a detalle) - CAMBIO IMPLEMENTADO AQUÍ */}
                           <button 
                             className="btn btn-outline-primary"
                             onClick={() => navigate(`/employees/${employee.id}`)}

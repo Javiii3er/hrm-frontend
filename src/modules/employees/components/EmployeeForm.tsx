@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEmployees } from '@modules/employees/hooks/useEmployees';
 import { Employee, EmployeeCreate, EmployeeUpdate } from '@modules/employees/types/employee';
 
-// Hemos añadido 'isModal' para manejar diferentes comportamientos de redirección/cancelación
+
 interface EmployeeFormProps {
-  employee?: Employee; // Para edición cuando el formulario es un subcomponente (ej: en un modal)
+  employee?: Employee; 
   onSuccess?: () => void;
   onCancel?: () => void;
-  isModal?: boolean; // Si se usa en modal (controla el botón 'Volver' y la redirección)
+  isModal?: boolean; 
 }
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({ 
@@ -17,10 +17,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   onCancel,
   isModal = false 
 }) => {
-  // 1. Hook para obtener el ID de la URL si estamos en /employees/edit/:id
+
   const { id } = useParams<{ id: string }>(); 
   const navigate = useNavigate();
-  // Incluimos fetchEmployee del hook para cargar datos por URL
   const { fetchEmployee, createEmployee, updateEmployee, loading, error } = useEmployees();
 
   const [formData, setFormData] = useState<EmployeeCreate | EmployeeUpdate>({
@@ -35,13 +34,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     status: 'ACTIVE'
   });
   
-  // 2. Nuevo estado para manejar si el formulario está en modo edición
   const [isEdit, setIsEdit] = useState(false);
 
-  // 3. Lógica de carga de datos unificada (por URL o por props)
   useEffect(() => {
     const loadEmployeeData = async () => {
-      // Caso A: Edición por URL (Ej: /employees/edit/123)
       if (id && !employee) {
         try {
           const employeeData = await fetchEmployee(id);
@@ -53,18 +49,18 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             phone: employeeData.phone || '',
             departmentId: employeeData.departmentId,
             position: employeeData.position || '',
-            // Aseguramos que hireDate sea un string en formato de fecha (YYYY-MM-DD)
+
             hireDate: employeeData.hireDate?.split('T')[0] || '', 
             status: employeeData.status
           });
           setIsEdit(true);
         } catch (loadError) {
           console.error('Error cargando empleado para edición:', loadError);
-          // Opcional: Redirigir a 404 o a la lista si no se encuentra
+
           if (!isModal) navigate('/employees'); 
         }
       } 
-      // Caso B: Edición por props (Para uso en modales o subcomponentes)
+
       else if (employee) {
         setFormData({
           nationalId: employee.nationalId,
@@ -83,7 +79,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
     loadEmployeeData();
     
-    // Dependencias: id (URL), employee (props), fetchEmployee (hook memoizado)
+
   }, [id, employee, fetchEmployee, isModal, navigate]); 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -99,21 +95,21 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     
     try {
       if (isEdit) {
-        // Editar: Usar id de URL (prioridad) o de props
+
         const employeeId = id || employee?.id;
         if (employeeId) {
           await updateEmployee(employeeId, formData as EmployeeUpdate);
         }
       } else {
-        // Crear: Asegurar que es EmployeeCreate
+
         await createEmployee(formData as EmployeeCreate);
       }
       
-      // Manejo de éxito
+
       if (onSuccess) {
         onSuccess();
       } else if (!isModal) {
-        // Redirigir a la lista si no es un modal y no hay callback de éxito
+
         navigate('/employees');
       }
     } catch (submitError) {
@@ -121,12 +117,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-  // 4. Nueva función para manejar la cancelación/volver
+
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
     } else if (!isModal) {
-      // Vuelve a la lista de empleados si no está en modo modal
+
       navigate('/employees');
     }
   };
@@ -134,17 +130,17 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   return (
     <div className="container-fluid">
       <div className="row justify-content-center">
-        {/* Se amplía el contenedor a col-lg-10 para mejor visualización */}
+
         <div className="col-lg-10"> 
           <div className="card">
             <div className="card-header bg-primary text-white">
               <div className="d-flex justify-content-between align-items-center">
                 <h4 className="mb-0">
-                  {/* Icono y título dinámico */}
+
                   <i className={`bi ${isEdit ? 'bi-pencil-square' : 'bi-person-plus-fill'} me-2`}></i>
                   {isEdit ? 'Editar Empleado' : 'Nuevo Empleado'}
                 </h4>
-                {/* Botón Volver solo visible si NO es modal */}
+
                 {!isModal && (
                   <button 
                     type="button" 
@@ -168,7 +164,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 
               <form onSubmit={handleSubmit}>
                 <div className="row g-3">
-                  {/* Título de sección agregado */}
+
                   <div className="col-12">
                     <h5 className="border-bottom pb-2 mb-3">
                       <i className="bi bi-person me-2"></i>
@@ -188,10 +184,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       value={formData.nationalId}
                       onChange={handleChange}
                       required
-                      // 🎯 Deshabilitar en modo edición
+       
                       disabled={loading || isEdit} 
                     />
-                    {/* Mensaje de apoyo para edición */}
+                
                     {isEdit && (
                       <div className="form-text text-muted">
                         La cédula no se puede modificar
@@ -247,7 +243,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                     />
                   </div>
                   
-                  {/* Se movió Teléfono aquí para agrupar mejor la Info Personal */}
+
                   <div className="col-md-6">
                     <label htmlFor="phone" className="form-label">
                       Teléfono
@@ -264,7 +260,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   </div>
 
 
-                  {/* Información Laboral - Título de sección agregado */}
+
                   <div className="col-12 mt-4">
                     <h5 className="border-bottom pb-2 mb-3">
                       <i className="bi bi-briefcase me-2"></i>

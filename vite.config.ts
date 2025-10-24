@@ -1,3 +1,4 @@
+// vite.config.ts
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -15,9 +16,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // CORREGIR: El proxy debe apuntar al puerto correcto
       '/api': {
-        target: 'http://localhost:4000', // ← Puerto de tu backend
+        target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api')
