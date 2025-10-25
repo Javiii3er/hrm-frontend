@@ -9,9 +9,7 @@ export class ApiClient {
     this.client = axios.create({
       baseURL,
       timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      // ❌ No forzamos Content-Type aquí (lo hace el navegador si es FormData)
     });
 
     this.setupInterceptors();
@@ -30,9 +28,7 @@ export class ApiClient {
     );
 
     this.client.interceptors.response.use(
-      (response: AxiosResponse<ApiResponse>) => {
-        return response;
-      },
+      (response: AxiosResponse<ApiResponse>) => response,
       (error: AxiosError<ApiError>) => {
         if (error.response?.status === 401) {
           localStorage.removeItem('accessToken');
@@ -53,7 +49,7 @@ export class ApiClient {
     localStorage.removeItem('refreshToken');
   }
 
-  async get<T, P extends Record<string, string | number | boolean | undefined> = Record<string, never>>(
+  async get<T, P extends Record<string, any> = Record<string, never>>(
     url: string,
     params?: P
   ): Promise<ApiResponse<T>> {
@@ -61,8 +57,19 @@ export class ApiClient {
     return response.data;
   }
 
-  async post<T>(url: string, data?: unknown): Promise<ApiResponse<T>> {
-    const response = await this.client.post<ApiResponse<T>>(url, data);
+  // ✅ POST detecta FormData automáticamente
+  async post<T>(url: string, data?: unknown, config: any = {}): Promise<ApiResponse<T>> {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+
+    const headers = isFormData
+      ? { ...config.headers } // navegador agrega multipart automáticamente
+      : { 'Content-Type': 'application/json', ...config.headers };
+
+    const response = await this.client.post<ApiResponse<T>>(url, data, {
+      ...config,
+      headers,
+    });
+
     return response.data;
   }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEmployees } from '@modules/employees/hooks/useEmployees';
 import { Employee, EmployeeCreate, EmployeeUpdate } from '@modules/employees/types/employee';
+import { apiClient } from '@/core/api/client'; // 👈 Importamos para llamar al backend
 
 
 interface EmployeeFormProps {
@@ -22,6 +23,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const navigate = useNavigate();
   const { fetchEmployee, createEmployee, updateEmployee, loading, error } = useEmployees();
 
+  // Estado principal del formulario
   const [formData, setFormData] = useState<EmployeeCreate | EmployeeUpdate>({
     nationalId: '',
     firstName: '',
@@ -36,6 +38,23 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   
   const [isEdit, setIsEdit] = useState(false);
 
+  // 👇 Nuevo estado para departamentos
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+
+  // 🔹 Cargar departamentos al iniciar
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await apiClient.get<{ id: string; name: string }[]>('departments');
+        if (res.success) setDepartments(res.data);
+      } catch (error) {
+        console.error('Error cargando departamentos:', error);
+      }
+    };
+    fetchDepartments();
+  }, []);
+
+  // 🔹 Cargar datos del empleado si estamos en modo edición
   useEffect(() => {
     const loadEmployeeData = async () => {
       if (id && !employee) {
@@ -49,19 +68,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             phone: employeeData.phone || '',
             departmentId: employeeData.departmentId,
             position: employeeData.position || '',
-
             hireDate: employeeData.hireDate?.split('T')[0] || '', 
             status: employeeData.status
           });
           setIsEdit(true);
         } catch (loadError) {
           console.error('Error cargando empleado para edición:', loadError);
-
           if (!isModal) navigate('/employees'); 
         }
-      } 
-
-      else if (employee) {
+      } else if (employee) {
         setFormData({
           nationalId: employee.nationalId,
           firstName: employee.firstName,
@@ -78,10 +93,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     };
 
     loadEmployeeData();
-    
-
   }, [id, employee, fetchEmployee, isModal, navigate]); 
 
+  // 🔹 Manejar cambios en los campos
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -90,26 +104,29 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }));
   };
 
+  // 🔹 Enviar el formulario (crear o actualizar)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validación simple antes de enviar
+    if (!formData.departmentId) {
+      alert('Por favor, seleccione un departamento.');
+      return;
+    }
     
     try {
       if (isEdit) {
-
         const employeeId = id || employee?.id;
         if (employeeId) {
           await updateEmployee(employeeId, formData as EmployeeUpdate);
         }
       } else {
-
         await createEmployee(formData as EmployeeCreate);
       }
       
-
       if (onSuccess) {
         onSuccess();
       } else if (!isModal) {
-
         navigate('/employees');
       }
     } catch (submitError) {
@@ -117,26 +134,26 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-
+  // 🔹 Cancelar o volver atrás
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
     } else if (!isModal) {
-
       navigate('/employees');
     }
   };
 
+  // =============================================
+  // Render del componente
+  // =============================================
   return (
     <div className="container-fluid">
       <div className="row justify-content-center">
-
         <div className="col-lg-10"> 
           <div className="card">
             <div className="card-header bg-primary text-white">
               <div className="d-flex justify-content-between align-items-center">
                 <h4 className="mb-0">
-
                   <i className={`bi ${isEdit ? 'bi-pencil-square' : 'bi-person-plus-fill'} me-2`}></i>
                   {isEdit ? 'Editar Empleado' : 'Nuevo Empleado'}
                 </h4>
@@ -165,6 +182,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
               <form onSubmit={handleSubmit}>
                 <div className="row g-3">
 
+                  {/* =====================
+                      INFORMACIÓN PERSONAL
+                  ====================== */}
                   <div className="col-12">
                     <h5 className="border-bottom pb-2 mb-3">
                       <i className="bi bi-person me-2"></i>
@@ -184,10 +204,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       value={formData.nationalId}
                       onChange={handleChange}
                       required
-       
                       disabled={loading || isEdit} 
                     />
-                
                     {isEdit && (
                       <div className="form-text text-muted">
                         La cédula no se puede modificar
@@ -242,7 +260,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       disabled={loading}
                     />
                   </div>
-                  
 
                   <div className="col-md-6">
                     <label htmlFor="phone" className="form-label">
@@ -259,8 +276,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                     />
                   </div>
 
-
-
+                  {/* =====================
+                      INFORMACIÓN LABORAL
+                  ====================== */}
                   <div className="col-12 mt-4">
                     <h5 className="border-bottom pb-2 mb-3">
                       <i className="bi bi-briefcase me-2"></i>
@@ -268,21 +286,27 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                     </h5>
                   </div>
 
+                  {/* 👇 AQUÍ CAMBIAMOS EL INPUT POR UN SELECT */}
                   <div className="col-md-6">
                     <label htmlFor="departmentId" className="form-label">
                       Departamento <span className="text-danger">*</span>
                     </label>
-                    <input
-                      type="text"
-                      className="form-control"
+                    <select
+                      className="form-select"
                       id="departmentId"
                       name="departmentId"
                       value={formData.departmentId}
                       onChange={handleChange}
                       required
                       disabled={loading}
-                      placeholder="ID del departamento"
-                    />
+                    >
+                      <option value="">Seleccione un departamento</option>
+                      {departments.map(dep => (
+                        <option key={dep.id} value={dep.id}>
+                          {dep.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="col-md-6">
@@ -337,7 +361,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   </div>
                 </div>
 
-                {/* Botones */}
+                {/* BOTONES */}
                 <div className="row mt-4">
                   <div className="col-12">
                     <div className="d-flex gap-2 justify-content-end">

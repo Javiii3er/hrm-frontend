@@ -50,9 +50,10 @@ export const useDocuments = () => {
 
     try {
       const response = await apiClient.post<Document>(
-        `/employees/${documentData.employeeId}/documents`,
-        formData
+      `/documents/${documentData.employeeId}/documents`,
+      formData
       );
+
 
       if (response.success) {
         setDocuments(prev => [...prev, response.data]);
