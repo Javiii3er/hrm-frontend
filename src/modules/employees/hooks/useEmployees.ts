@@ -8,25 +8,22 @@ import {
   EmployeeCreate, 
   EmployeeUpdate, 
   EmployeeQuery,
-  // CORRECCIÓN ESLINT/TS6133: Quitamos 'EmployeeResponse' que no se usaba.
-} from '../types/employee.js'; // Aseguramos el .js en ES Modules
+} from '../types/employee.js'; 
 
-// Hook similar a tu EmployeeService
+
 export const useEmployees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Función auxiliar para manejar la extracción segura del mensaje de error
   const getErrorMessage = (err: unknown): string => {
     if (err && (err as AxiosError<ApiError>).response) {
-      // Intentamos acceder al mensaje de error de la API tipado por ApiError
       return (err as AxiosError<ApiError>).response?.data?.error?.message || 'Error de servidor desconocido.';
     }
     return 'Error de conexión o red.';
   };
 
-  // GET Employees - como tu employee.controller.ts getEmployees
+  // GET Employees
   const fetchEmployees = useCallback(async (query: EmployeeQuery = {}) => {
   setLoading(true);
   setError(null);
@@ -49,7 +46,7 @@ export const useEmployees = () => {
   }
 }, []);
 
-  // GET Employee by ID - como tu getEmployeeById
+  // GET Employee by ID
   const fetchEmployee = useCallback(async (id: string): Promise<Employee> => {
     setLoading(true);
     setError(null);
@@ -70,7 +67,7 @@ export const useEmployees = () => {
     }
   }, []);
 
-  // CREATE Employee - como tu createEmployee
+  // CREATE Employee
   const createEmployee = useCallback(async (employeeData: EmployeeCreate): Promise<Employee> => {
     setLoading(true);
     setError(null);
@@ -92,7 +89,7 @@ export const useEmployees = () => {
     }
   }, []);
 
-  // UPDATE Employee - como tu updateEmployee
+  // UPDATE Employee
   const updateEmployee = useCallback(async (id: string, employeeData: EmployeeUpdate): Promise<Employee> => {
     setLoading(true);
     setError(null);
@@ -116,7 +113,7 @@ export const useEmployees = () => {
     }
   }, []);
 
-  // DELETE Employee - como tu deleteEmployee
+  // DELETE Employee
   const deleteEmployee = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);

@@ -1,14 +1,15 @@
+// src/modules/reports/hooks/useReports.ts
 import { useState, useCallback } from 'react';
 import { apiClient } from '@core/api/client';
 import { ReportRequest, ReportResponse, ReportTemplate } from '../types/report';
-import type { ApiResponse } from '@core/types/api.gen.ts'; // asegúrate de tener este tipo
+import type { ApiResponse } from '@core/types/api.gen.ts';
 
 export const useReports = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
 
-  // ✅ GENERATE Report
+  //  GENERATE Report
   const generateReport = useCallback(async (reportRequest: ReportRequest): Promise<ReportResponse> => {
     setLoading(true);
     setGenerating(true);
@@ -32,7 +33,7 @@ export const useReports = () => {
     }
   }, []);
 
-  // ✅ DOWNLOAD Report
+  // DOWNLOAD Report
   const downloadReport = useCallback(async (downloadUrl: string, filename: string): Promise<void> => {
     try {
       const link = document.createElement('a');
@@ -48,7 +49,7 @@ export const useReports = () => {
     }
   }, []);
 
-  // ✅ GET Report Templates
+  // GET Report Templates
   const getReportTemplates = useCallback(async (): Promise<ReportTemplate[]> => {
     setLoading(true);
     setError(null);

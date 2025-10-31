@@ -1,7 +1,9 @@
+// src/modules/employees/components/EmployeeList.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEmployees } from '../hooks/useEmployees'; 
+import { useEmployees } from '../hooks/useEmployees';
 import { EmployeeQuery, Employee } from '../types/employee';
+import { useToast } from '@/core/contexts/ToastContext';
 
 const CustomAlert = ({ message, onClose }: { message: string, onClose: () => void }) => (
   <div className="alert alert-warning d-flex align-items-center" role="alert">
@@ -12,10 +14,10 @@ const CustomAlert = ({ message, onClose }: { message: string, onClose: () => voi
 );
 
 const EmployeeList: React.FC = () => {
-
   const { employees, loading, error, fetchEmployees, deleteEmployee, clearError } = useEmployees();
-  const navigate = useNavigate(); 
-    
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
   const [query, setQuery] = useState<EmployeeQuery>({
     page: 1,
     pageSize: 10,
@@ -26,48 +28,39 @@ const EmployeeList: React.FC = () => {
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-
   useEffect(() => {
     fetchEmployees(query);
-
+    showToast('info', 'Lista de empleados cargada correctamente.');
   }, []);
 
-
   useEffect(() => {
     fetchEmployees(query);
-
   }, [query]);
-  
 
-  
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-
     setQuery(prev => ({ ...prev, page: 1 }));
+    showToast('info', 'Búsqueda aplicada.');
   };
 
   const initiateDelete = (id: string) => {
-
     setConfirmDeleteId(id);
   };
-  
+
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
 
     try {
       await deleteEmployee(confirmDeleteId);
-
-      console.log('Empleado eliminado con éxito (placeholder de notificación).'); 
-
+      showToast('success', 'Empleado eliminado correctamente.');
     } catch (error) {
       console.error('Error eliminando empleado:', error);
+      showToast('danger', 'Error al eliminar el empleado. Inténtalo nuevamente.');
     } finally {
       setConfirmDeleteId(null);
     }
   };
 
-
-  // --- Renderizado Condicional: Spinner de Carga Inicial ---
   if (loading && employees.length === 0) {
     return (
       <div className="d-flex justify-content-center my-5">
@@ -80,25 +73,49 @@ const EmployeeList: React.FC = () => {
 
   return (
     <div className="container-fluid">
-      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-          <i className="bi bi-people-fill me-2"></i>
-          Gestión de Empleados
-        </h2>
-        {/* Botón para crear nuevo empleado */}
-        <button 
+        <div className="d-flex align-items-center gap-2">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => {
+              navigate('/');
+              showToast('info', 'Regresando al inicio.');
+            }}
+          >
+            <i className="bi bi-arrow-left me-1"></i>
+            Volver
+          </button>
+
+          <h2 className="mb-0">
+            <i className="bi bi-people-fill me-2"></i>
+            Gestión de Empleados
+          </h2>
+        </div>
+
+        <button
           className="btn btn-primary"
-          onClick={() => navigate('/employees/new')} 
-          disabled={loading} 
+          onClick={() => navigate('/employees/new')}
+          disabled={loading}
         >
           <i className="bi bi-plus-circle me-2"></i>
           Nuevo Empleado
         </button>
       </div>
 
-      {/* Filtros de Búsqueda */}
-      <div className="card mb-4">
+      <div
+        className="alert alert-warning shadow-sm border-start border-4 border-warning mb-4"
+        role="alert"
+      >
+        <div className="d-flex align-items-center">
+          <i className="bi bi-people text-warning fs-4 me-3"></i>
+          <div>
+            <strong>Visualizando todos los empleados registrados.</strong><br />
+            Puedes buscar, filtrar o agregar nuevos empleados fácilmente.
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-4 shadow-sm border-light">
         <div className="card-body">
           <form onSubmit={handleSearch}>
             <div className="row g-3">
@@ -150,25 +167,17 @@ const EmployeeList: React.FC = () => {
         </div>
       </div>
 
-      {/* Mensaje de Error del API */}
       {error && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm border-start border-4 border-danger" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
-          {/*  Cierra el alert llamando a clearError del hook */}
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={clearError}
-            aria-label="Cerrar"
-          ></button>
+          <button type="button" className="btn-close" onClick={clearError} aria-label="Cerrar"></button>
         </div>
       )}
 
-      {/* Modal/Confirmación de Eliminación (Personalizada) */}
       {confirmDeleteId && (
-        <div className="alert alert-warning alert-dismissible fade show" role="alert">
-          <CustomAlert 
+        <div className="alert alert-warning alert-dismissible fade show shadow-sm border-start border-4 border-warning" role="alert">
+          <CustomAlert
             message={`¿Estás seguro de que quieres eliminar al empleado con ID: ${confirmDeleteId}? Esta acción no se puede deshacer.`}
             onClose={() => setConfirmDeleteId(null)}
           />
@@ -183,11 +192,8 @@ const EmployeeList: React.FC = () => {
         </div>
       )}
 
-
-      {/* Tabla de Empleados */}
-      <div className="card">
+      <div className="card shadow-sm border-light">
         <div className="card-body">
-          {/* Muestra el mensaje si no hay datos Y la carga ha terminado */}
           {employees.length === 0 && !loading ? (
             <div className="text-center py-5">
               <i className="bi bi-people display-1 text-muted"></i>
@@ -196,7 +202,7 @@ const EmployeeList: React.FC = () => {
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover">
+              <table className="table table-hover align-middle">
                 <thead className="table-light">
                   <tr>
                     <th>Cédula</th>
@@ -212,19 +218,18 @@ const EmployeeList: React.FC = () => {
                   {employees.map((employee: Employee) => (
                     <tr key={employee.id}>
                       <td>{employee.nationalId}</td>
-                      <td>
-                        {employee.firstName} {employee.lastName}
-                      </td>
+                      <td>{employee.firstName} {employee.lastName}</td>
                       <td>{employee.email}</td>
-                      {/* Asume que department es un objeto o tiene una propiedad name */}
-                      <td>{employee.department?.name || employee.departmentId || 'N/A'}</td> 
+                      <td>{employee.department?.name || employee.departmentId || 'N/A'}</td>
                       <td>{employee.position || 'N/A'}</td>
                       <td>
-                        <span className={`badge ${
-                          employee.status === 'ACTIVE' ? 'bg-success' :
-                          employee.status === 'INACTIVE' ? 'bg-secondary' :
-                          employee.status === 'SUSPENDED' ? 'bg-warning text-dark' : 'bg-info'
-                        }`}>
+                        <span
+                          className={`badge ${
+                            employee.status === 'ACTIVE' ? 'bg-success' :
+                            employee.status === 'INACTIVE' ? 'bg-secondary' :
+                            employee.status === 'SUSPENDED' ? 'bg-warning text-dark' : 'bg-info'
+                          }`}
+                        >
                           {employee.status === 'ACTIVE' ? 'Activo' :
                             employee.status === 'INACTIVE' ? 'Inactivo' :
                             employee.status === 'SUSPENDED' ? 'Suspendido' : 'Vacaciones'}
@@ -232,26 +237,13 @@ const EmployeeList: React.FC = () => {
                       </td>
                       <td>
                         <div className="btn-group btn-group-sm">
-                          {/* Botón Ver (navega a detalle) - CAMBIO IMPLEMENTADO AQUÍ */}
-                          <button 
-                            className="btn btn-outline-primary"
-                            onClick={() => navigate(`/employees/${employee.id}`)}
-                          >
+                          <button className="btn btn-outline-primary" onClick={() => navigate(`/employees/${employee.id}`)}>
                             <i className="bi bi-eye"></i>
                           </button>
-                          {/* Botón Editar (navega a edición) */}
-                          <button 
-                            className="btn btn-outline-secondary"
-                            onClick={() => navigate(`/employees/edit/${employee.id}`)}
-                          >
+                          <button className="btn btn-outline-secondary" onClick={() => navigate(`/employees/edit/${employee.id}`)}>
                             <i className="bi bi-pencil"></i>
                           </button>
-                          {/* Botón Eliminar */}
-                          <button 
-                            className="btn btn-outline-danger"
-                            onClick={() => initiateDelete(employee.id)} // Llama a la confirmación personalizada
-                            disabled={loading} 
-                          >
+                          <button className="btn btn-outline-danger" onClick={() => initiateDelete(employee.id)} disabled={loading}>
                             <i className="bi bi-trash"></i>
                           </button>
                         </div>
@@ -265,18 +257,14 @@ const EmployeeList: React.FC = () => {
         </div>
       </div>
 
-      {/* Paginación (placeholder) */}
       {employees.length > 0 && (
         <nav className="mt-4">
           <ul className="pagination justify-content-center">
             <li className="page-item disabled">
-              <a className="page-link" href="#" tabIndex={-1}>Anterior</a>
+              <a className="page-link" href="#">Anterior</a>
             </li>
             <li className="page-item active">
               <a className="page-link" href="#">1</a>
-            </li>
-            <li className="page-item">
-              <a className="page-link" href="#">2</a>
             </li>
             <li className="page-item">
               <a className="page-link" href="#">Siguiente</a>

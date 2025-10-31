@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayroll } from '../hooks/usePayroll';
 import { PayrollQuery } from '../types/payroll';
+import { useToast } from '@/core/contexts/ToastContext';
 
 const PayrollList: React.FC = () => {
   const { payrolls, loading, error, fetchPayrolls, finalizePayroll } = usePayroll();
+  const { showToast } = useToast();
   const navigate = useNavigate();
+
   const [query, setQuery] = useState<PayrollQuery>({
     page: 1,
     pageSize: 10,
@@ -15,22 +18,25 @@ const PayrollList: React.FC = () => {
     status: ''
   });
 
-  // Cargar nóminas al montar
   useEffect(() => {
     fetchPayrolls(query);
+    showToast('info', 'Lista de nóminas cargada correctamente.');
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchPayrolls({ ...query, page: 1 });
+    showToast('info', 'Búsqueda aplicada.');
   };
 
   const handleFinalize = async (payrollId: string) => {
     if (window.confirm('¿Estás seguro de que quieres finalizar esta nómina? No podrá ser editada después.')) {
       try {
         await finalizePayroll(payrollId);
+        showToast('success', 'Nómina finalizada correctamente.');
       } catch (error) {
         console.error('Error finalizando nómina:', error);
+        showToast('danger', 'Error al finalizar la nómina. Intente nuevamente.');
       }
     }
   };
@@ -41,7 +47,6 @@ const PayrollList: React.FC = () => {
       FINALIZED: { class: 'bg-success', text: 'Finalizada' },
       PAID: { class: 'bg-info', text: 'Pagada' }
     };
-    
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
     return <span className={`badge ${config.class}`}>{config.text}</span>;
   };
@@ -70,13 +75,26 @@ const PayrollList: React.FC = () => {
 
   return (
     <div className="container-fluid">
-      {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-          <i className="bi bi-cash-coin me-2"></i>
-          Gestión de Nóminas
-        </h2>
-        <button 
+        <div className="d-flex align-items-center gap-2">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => {
+              navigate('/');
+              showToast('info', 'Regresando al inicio.');
+            }}
+          >
+            <i className="bi bi-arrow-left me-1"></i>
+            Volver
+          </button>
+
+          <h2 className="mb-0">
+            <i className="bi bi-cash-coin me-2"></i>
+            Gestión de Nóminas
+          </h2>
+        </div>
+
+        <button
           className="btn btn-primary"
           onClick={() => navigate('/payroll/new')}
         >
@@ -85,8 +103,17 @@ const PayrollList: React.FC = () => {
         </button>
       </div>
 
-      {/* Filtros */}
-      <div className="card mb-4">
+      <div className="alert alert-warning shadow-sm border-start border-4 border-warning mb-4" role="alert">
+        <div className="d-flex align-items-center">
+          <i className="bi bi-cash-stack fs-4 me-3 text-warning"></i>
+          <div>
+            <strong>Administración de Nóminas.</strong><br />
+            Consulta, filtra o crea nuevas nóminas desde esta sección.
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-4 shadow-sm border-light">
         <div className="card-body">
           <form onSubmit={handleSearch}>
             <div className="row g-3">
@@ -146,17 +173,15 @@ const PayrollList: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+        <div className="alert alert-danger alert-dismissible fade show shadow-sm border-start border-4 border-danger" role="alert">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
           <button type="button" className="btn-close" onClick={() => {}}></button>
         </div>
       )}
 
-      {/* Payroll Table */}
-      <div className="card">
+      <div className="card shadow-sm border-light">
         <div className="card-body">
           {payrolls.length === 0 ? (
             <div className="text-center py-5">
@@ -166,12 +191,14 @@ const PayrollList: React.FC = () => {
             </div>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover">
+              <table className="table table-hover align-middle">
                 <thead className="table-light">
                   <tr>
                     <th>Periodo</th>
                     <th>Descripción</th>
-                    <th>Departamento</th>
+                    {/*  Nuevo: tipo de nómina */}
+                    <th>Tipo</th>
+                    <th>Departamento / Empleado</th>
                     <th>Estado</th>
                     <th>Total</th>
                     <th>Empleados</th>
@@ -191,22 +218,34 @@ const PayrollList: React.FC = () => {
                         </div>
                       </td>
                       <td>{payroll.description || 'Nómina regular'}</td>
-                      <td>{payroll.department?.name || 'Todos'}</td>
-                      <td>{getStatusBadge(payroll.status)}</td>
-                      <td className="fw-bold text-success">
-                        {formatCurrency(calculateTotal(payroll))}
+
+                      {/* 🔹 Mostrar tipo */}
+                      <td>
+                        {payroll.employeeId ? (
+                          <span className="badge bg-info">Individual</span>
+                        ) : (
+                          <span className="badge bg-secondary">General</span>
+                        )}
                       </td>
+
+                      {/* 🔹 Mostrar nombre del empleado o departamento */}
+                      <td>
+                        {payroll.employee
+                          ? `${payroll.employee.firstName} ${payroll.employee.lastName}`
+                          : payroll.department?.name || 'Todos'}
+                      </td>
+
+                      <td>{getStatusBadge(payroll.status)}</td>
+                      <td className="fw-bold text-success">{formatCurrency(calculateTotal(payroll))}</td>
                       <td>
                         <span className="badge bg-primary">
                           {payroll.items?.length || 0} empleados
                         </span>
                       </td>
-                      <td>
-                        {new Date(payroll.createdAt).toLocaleDateString('es-ES')}
-                      </td>
+                      <td>{new Date(payroll.createdAt).toLocaleDateString('es-ES')}</td>
                       <td>
                         <div className="btn-group btn-group-sm">
-                          <button 
+                          <button
                             className="btn btn-outline-primary"
                             onClick={() => navigate(`/payroll/${payroll.id}`)}
                           >
@@ -217,7 +256,7 @@ const PayrollList: React.FC = () => {
                               <button className="btn btn-outline-secondary">
                                 <i className="bi bi-pencil"></i>
                               </button>
-                              <button 
+                              <button
                                 className="btn btn-outline-success"
                                 onClick={() => handleFinalize(payroll.id)}
                                 title="Finalizar Nómina"
@@ -242,12 +281,11 @@ const PayrollList: React.FC = () => {
         </div>
       </div>
 
-      {/* Pagination */}
       {payrolls.length > 0 && (
         <nav className="mt-4">
           <ul className="pagination justify-content-center">
             <li className="page-item disabled">
-              <a className="page-link" href="#" tabIndex={-1}>Anterior</a>
+              <a className="page-link" href="#">Anterior</a>
             </li>
             <li className="page-item active">
               <a className="page-link" href="#">1</a>

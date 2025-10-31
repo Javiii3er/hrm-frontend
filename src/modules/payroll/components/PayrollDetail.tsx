@@ -30,8 +30,13 @@ const PayrollDetail: React.FC = () => {
 
   const handleGenerateItems = async () => {
     if (!payroll) return;
-    
-    if (window.confirm('¿Generar items de nómina para este periodo? Esto calculará los salarios de todos los empleados activos.')) {
+
+    // mensaje dinámico según el tipo de nómina
+    const confirmMessage = payroll.employeeId
+      ? '¿Deseas generar los items solo para este empleado?'
+      : '¿Generar items de nómina para este periodo? Esto calculará los salarios de todos los empleados activos.';
+
+    if (window.confirm(confirmMessage)) {
       try {
         await generatePayrollItems(payroll.id);
         await loadPayroll();
@@ -43,11 +48,11 @@ const PayrollDetail: React.FC = () => {
 
   const handleFinalize = async () => {
     if (!payroll) return;
-    
+
     if (window.confirm('¿Finalizar esta nómina? Una vez finalizada no podrá ser editada.')) {
       try {
         await finalizePayroll(payroll.id);
-        await loadPayroll(); 
+        await loadPayroll();
       } catch (error) {
         console.error('Error finalizando nómina:', error);
       }
@@ -93,7 +98,7 @@ const PayrollDetail: React.FC = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-GT', {
       style: 'currency',
-      currency: 'GTQ'
+      currency: 'GTQ',
     }).format(amount);
   };
 
@@ -101,22 +106,26 @@ const PayrollDetail: React.FC = () => {
     const statusConfig = {
       DRAFT: { class: 'bg-secondary', text: 'Borrador' },
       FINALIZED: { class: 'bg-success', text: 'Finalizada' },
-      PAID: { class: 'bg-info', text: 'Pagada' }
+      PAID: { class: 'bg-info', text: 'Pagada' },
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
     return <span className={`badge ${config.class} fs-6`}>{config.text}</span>;
   };
 
   const calculateTotals = () => {
-    if (!payroll?.items) return { gross: 0, net: 0, deductions: 0, employees: 0 };
-    
-    return payroll.items.reduce((acc, item) => ({
-      gross: acc.gross + item.grossAmount,
-      net: acc.net + item.netAmount,
-      deductions: acc.deductions + (item.grossAmount - item.netAmount),
-      employees: acc.employees + 1
-    }), { gross: 0, net: 0, deductions: 0, employees: 0 });
+    if (!payroll?.items)
+      return { gross: 0, net: 0, deductions: 0, employees: 0 };
+
+    return payroll.items.reduce(
+      (acc, item) => ({
+        gross: acc.gross + item.grossAmount,
+        net: acc.net + item.netAmount,
+        deductions: acc.deductions + (item.grossAmount - item.netAmount),
+        employees: acc.employees + 1,
+      }),
+      { gross: 0, net: 0, deductions: 0, employees: 0 }
+    );
   };
 
   if (loading && !payroll) {
@@ -157,15 +166,19 @@ const PayrollDetail: React.FC = () => {
             <i className="bi bi-arrow-left me-2"></i>
             Volver
           </button>
+
+          {/* título dinámico */}
           <h2 className="d-inline-block mb-0">
             <i className="bi bi-cash-coin me-2"></i>
-            Detalles de Nómina
+            {payroll.employeeId
+              ? `Nómina Individual de ${payroll.employee?.firstName || 'Empleado'}`
+              : 'Detalles de Nómina'}
           </h2>
         </div>
         <div className="d-flex gap-2">
           {payroll.status === 'DRAFT' && (
             <>
-              <button 
+              <button
                 className="btn btn-warning"
                 onClick={handleGenerateItems}
                 disabled={loading}
@@ -173,7 +186,7 @@ const PayrollDetail: React.FC = () => {
                 <i className="bi bi-calculator me-2"></i>
                 Generar Items
               </button>
-              <button 
+              <button
                 className="btn btn-success"
                 onClick={handleFinalize}
                 disabled={loading || !payroll.items || payroll.items.length === 0}
@@ -208,7 +221,7 @@ const PayrollDetail: React.FC = () => {
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">Periodo</label>
                   <p className="form-control-plaintext">
-                    {new Date(payroll.periodStart).toLocaleDateString('es-ES')} 
+                    {new Date(payroll.periodStart).toLocaleDateString('es-ES')}
                     {' al '}
                     {new Date(payroll.periodEnd).toLocaleDateString('es-ES')}
                   </p>
@@ -217,16 +230,30 @@ const PayrollDetail: React.FC = () => {
                   <label className="form-label fw-bold">Estado</label>
                   <div>{getStatusBadge(payroll.status)}</div>
                 </div>
+
+                {/* tipo y responsable */}
                 <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">Tipo de Nómina</label>
+                  <p className="form-control-plaintext">
+                    {payroll.employeeId ? 'Individual' : 'General'}
+                  </p>
+                </div>
+
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    {payroll.employeeId ? 'Empleado' : 'Departamento'}
+                  </label>
+                  <p className="form-control-plaintext">
+                    {payroll.employeeId
+                      ? `${payroll.employee?.firstName || ''} ${payroll.employee?.lastName || ''}`
+                      : payroll.department?.name || 'Todos los departamentos'}
+                  </p>
+                </div>
+
+                <div className="col-md-12 mb-3">
                   <label className="form-label fw-bold">Descripción</label>
                   <p className="form-control-plaintext">
                     {payroll.description || 'Nómina regular'}
-                  </p>
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">Departamento</label>
-                  <p className="form-control-plaintext">
-                    {payroll.department?.name || 'Todos los departamentos'}
                   </p>
                 </div>
               </div>
@@ -238,7 +265,10 @@ const PayrollDetail: React.FC = () => {
             <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">
                 <i className="bi bi-list-check me-2"></i>
-                Detalle de Pagos ({payroll.items?.length || 0} empleados)
+                {/* mostrar cantidad según tipo */}
+                {payroll.employeeId
+                  ? 'Detalle de Pago Individual'
+                  : `Detalle de Pagos (${payroll.items?.length || 0} empleados)`}
               </h5>
               {totals.net > 0 && (
                 <span className="badge bg-light text-dark fs-6">
@@ -255,7 +285,7 @@ const PayrollDetail: React.FC = () => {
                     Genera los items de nómina para calcular los pagos de los empleados.
                   </p>
                   {payroll.status === 'DRAFT' && (
-                    <button 
+                    <button
                       className="btn btn-primary"
                       onClick={handleGenerateItems}
                     >
@@ -316,7 +346,6 @@ const PayrollDetail: React.FC = () => {
 
         {/* Sidebar - Estadísticas y Acciones */}
         <div className="col-lg-4">
-          {/* Resumen Financiero */}
           <div className="card mb-4">
             <div className="card-header bg-info text-white">
               <h5 className="mb-0">
@@ -352,7 +381,6 @@ const PayrollDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Información del Sistema */}
           <div className="card">
             <div className="card-header bg-secondary text-white">
               <h5 className="mb-0">
@@ -375,7 +403,7 @@ const PayrollDetail: React.FC = () => {
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </p>
               </div>
@@ -387,7 +415,7 @@ const PayrollDetail: React.FC = () => {
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </p>
               </div>

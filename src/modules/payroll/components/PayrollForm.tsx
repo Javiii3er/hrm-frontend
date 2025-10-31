@@ -1,30 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayroll } from '../hooks/usePayroll';
 import { PayrollCreate } from '../types/payroll';
+import { useEmployees } from '../../employees/hooks/useEmployees';
 
 const PayrollForm: React.FC = () => {
   const navigate = useNavigate();
-  const { createPayroll, loading, error } = usePayroll();
+  const { createPayroll, createIndividualPayroll, loading, error } = usePayroll(); 
+  const { employees, fetchEmployees } = useEmployees(); 
   const [formData, setFormData] = useState<PayrollCreate>({
     periodStart: '',
     periodEnd: '',
     departmentId: '',
-    description: ''
+    description: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+
+  const [payrollType, setPayrollType] = useState<'GENERAL' | 'INDIVIDUAL'>('GENERAL');
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+
+  useEffect(() => {
+    if (payrollType === 'INDIVIDUAL') {
+      fetchEmployees();
+    }
+  }, [payrollType]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+  };
+
+  const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = e.target.value as 'GENERAL' | 'INDIVIDUAL';
+    setPayrollType(newType);
+    if (newType === 'GENERAL') {
+      setSelectedEmployee('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validación básica
+
     if (!formData.periodStart || !formData.periodEnd) {
       alert('Por favor completa las fechas del periodo');
       return;
@@ -36,7 +57,12 @@ const PayrollForm: React.FC = () => {
     }
 
     try {
-      await createPayroll(formData);
+      if (payrollType === 'INDIVIDUAL' && selectedEmployee) {
+        await createIndividualPayroll(selectedEmployee, formData);
+      } else {
+        await createPayroll(formData);
+      }
+
       navigate('/payroll');
     } catch (error) {
       console.error('Error creando nómina:', error);
@@ -47,17 +73,26 @@ const PayrollForm: React.FC = () => {
     navigate('/payroll');
   };
 
-  // Generar descripción automática basada en las fechas
   const generateDescription = () => {
     if (formData.periodStart && formData.periodEnd) {
       const start = new Date(formData.periodStart);
       const end = new Date(formData.periodEnd);
-      
+
       const monthNames = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        'Enero',
+        'Febrero',
+        'Marzo',
+        'Abril',
+        'Mayo',
+        'Junio',
+        'Julio',
+        'Agosto',
+        'Septiembre',
+        'Octubre',
+        'Noviembre',
+        'Diciembre',
       ];
-      
+
       if (start.getMonth() === end.getMonth()) {
         // Mismo mes
         return `Nómina ${monthNames[start.getMonth()]} ${start.getFullYear()}`;
@@ -70,11 +105,11 @@ const PayrollForm: React.FC = () => {
   };
 
   // Actualizar descripción cuando cambien las fechas
-  React.useEffect(() => {
+  useEffect(() => {
     if (!formData.description) {
       const autoDescription = generateDescription();
       if (autoDescription) {
-        setFormData(prev => ({ ...prev, description: autoDescription }));
+        setFormData((prev) => ({ ...prev, description: autoDescription }));
       }
     }
   }, [formData.periodStart, formData.periodEnd]);
@@ -90,8 +125,8 @@ const PayrollForm: React.FC = () => {
                   <i className="bi bi-plus-circle me-2"></i>
                   Crear Nueva Nómina
                 </h4>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-light btn-sm"
                   onClick={handleCancel}
                 >
@@ -100,7 +135,7 @@ const PayrollForm: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="card-body">
               {error && (
                 <div className="alert alert-danger" role="alert">
@@ -111,9 +146,62 @@ const PayrollForm: React.FC = () => {
 
               <form onSubmit={handleSubmit}>
                 <div className="row g-3">
-                  {/* Periodo de Nómina */}
+                  {/* 🔹 NUEVO: Tipo de nómina */}
                   <div className="col-12">
                     <h5 className="border-bottom pb-2 mb-3">
+                      <i className="bi bi-gear me-2"></i>
+                      Tipo de Nómina
+                    </h5>
+                  </div>
+                  <div className="col-md-6">
+                    <label htmlFor="payrollType" className="form-label">
+                      Selecciona tipo
+                    </label>
+                    <select
+                      id="payrollType"
+                      className="form-select"
+                      value={payrollType}
+                      onChange={handleTypeChange}
+                      disabled={loading}
+                    >
+                      <option value="GENERAL">General</option>
+                      <option value="INDIVIDUAL">Individual (por empleado)</option>
+                    </select>
+                    <div className="form-text">
+                      Selecciona “Individual” para generar nómina de un solo empleado
+                    </div>
+                  </div>
+
+                  {/* 🔹 NUEVO: Selección de empleado */}
+                  {payrollType === 'INDIVIDUAL' && (
+                    <div className="col-md-6">
+                      <label htmlFor="selectedEmployee" className="form-label">
+                        Empleado
+                      </label>
+                      <select
+                        id="selectedEmployee"
+                        className="form-select"
+                        value={selectedEmployee}
+                        onChange={(e) => setSelectedEmployee(e.target.value)}
+                        disabled={loading}
+                        required
+                      >
+                        <option value="">Seleccione un empleado...</option>
+                        {employees.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.firstName} {emp.lastName} ({emp.department?.name || 'Sin dpto'})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="form-text">
+                        Solo aparecerán empleados activos
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Periodo de Nómina */}
+                  <div className="col-12">
+                    <h5 className="border-bottom pb-2 mb-3 mt-4">
                       <i className="bi bi-calendar-range me-2"></i>
                       Periodo de Nómina
                     </h5>
@@ -133,9 +221,7 @@ const PayrollForm: React.FC = () => {
                       required
                       disabled={loading}
                     />
-                    <div className="form-text">
-                      Primera día del periodo a pagar
-                    </div>
+                    <div className="form-text">Primer día del periodo a pagar</div>
                   </div>
 
                   <div className="col-md-6">
@@ -152,9 +238,7 @@ const PayrollForm: React.FC = () => {
                       required
                       disabled={loading}
                     />
-                    <div className="form-text">
-                      Último día del periodo a pagar
-                    </div>
+                    <div className="form-text">Último día del periodo a pagar</div>
                   </div>
 
                   {/* Información Adicional */}
@@ -195,7 +279,7 @@ const PayrollForm: React.FC = () => {
                       name="departmentId"
                       value={formData.departmentId}
                       onChange={handleChange}
-                      disabled={loading}
+                      disabled={loading || payrollType === 'INDIVIDUAL'} 
                       placeholder="ID del departamento"
                     />
                     <div className="form-text">
@@ -203,7 +287,7 @@ const PayrollForm: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Resumen */}
+                  {/* Vista Previa */}
                   {(formData.periodStart || formData.periodEnd) && (
                     <div className="col-12 mt-3">
                       <div className="card border-info">
@@ -216,45 +300,53 @@ const PayrollForm: React.FC = () => {
                         <div className="card-body">
                           <div className="row">
                             <div className="col-md-6">
-                              <strong>Periodo:</strong><br />
+                              <strong>Periodo:</strong>
+                              <br />
                               {formData.periodStart && (
                                 <>
-                                  {new Date(formData.periodStart).toLocaleDateString('es-ES', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
+                                  {new Date(
+                                    formData.periodStart
+                                  ).toLocaleDateString('es-ES', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
                                   })}
                                 </>
                               )}
                               {formData.periodEnd && (
                                 <>
                                   {' al '}
-                                  {new Date(formData.periodEnd).toLocaleDateString('es-ES', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
+                                  {new Date(
+                                    formData.periodEnd
+                                  ).toLocaleDateString('es-ES', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
                                   })}
                                 </>
                               )}
                             </div>
                             <div className="col-md-6">
-                              <strong>Días:</strong><br />
+                              <strong>Días:</strong>
+                              <br />
                               {formData.periodStart && formData.periodEnd && (
                                 <>
                                   {Math.ceil(
-                                    (new Date(formData.periodEnd).getTime() - 
-                                     new Date(formData.periodStart).getTime()) / 
-                                    (1000 * 60 * 60 * 24)
-                                  ) + 1} días
+                                    (new Date(formData.periodEnd).getTime() -
+                                      new Date(formData.periodStart).getTime()) /
+                                      (1000 * 60 * 60 * 24)
+                                  ) + 1}{' '}
+                                  días
                                 </>
                               )}
                             </div>
                           </div>
                           {formData.description && (
                             <div className="mt-2">
-                              <strong>Descripción:</strong><br />
+                              <strong>Descripción:</strong>
+                              <br />
                               {formData.description}
                             </div>
                           )}
@@ -277,7 +369,7 @@ const PayrollForm: React.FC = () => {
                         <i className="bi bi-x-circle me-2"></i>
                         Cancelar
                       </button>
-                      
+
                       <button
                         type="submit"
                         className="btn btn-primary"
@@ -285,7 +377,10 @@ const PayrollForm: React.FC = () => {
                       >
                         {loading ? (
                           <>
-                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span
+                              className="spinner-border spinner-border-sm me-2"
+                              role="status"
+                            ></span>
                             Creando Nómina...
                           </>
                         ) : (

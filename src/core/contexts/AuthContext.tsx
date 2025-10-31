@@ -5,9 +5,6 @@ import { User, LoginRequest, AuthResponse, ApiError } from '../types/global.js';
 import { apiClient } from '../api/client.js';
 import { AxiosError } from 'axios';
 
-/* -------------------------------------------------------------
-   🔹 Tipos de estado y acciones
-------------------------------------------------------------- */
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -29,9 +26,6 @@ const initialState: AuthState = {
   error: null,
 };
 
-/* -------------------------------------------------------------
-   🔹 Reducer de autenticación
-------------------------------------------------------------- */
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case 'AUTH_START':
@@ -66,23 +60,16 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-/* -------------------------------------------------------------
-   🔹 AuthProvider
-------------------------------------------------------------- */
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  /* ---------------------------------------------------------
-     ✅ Verificación inicial de sesión (CheckAuth)
-  --------------------------------------------------------- */
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('accessToken');
-      if (!token) return; // No hay token, salir sin intentar nada.
+      if (!token) return; 
 
       try {
         dispatch({ type: 'AUTH_START' });
-        // ❗️Quitar la barra inicial evita rutas mal formadas: //auth/me
         const response = await apiClient.get<User>('auth/me');
 
         if (response && response.success && response.data) {
@@ -97,24 +84,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     checkAuth();
-    // Solo correr una vez al montar
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ---------------------------------------------------------
-     ✅ Login
-  --------------------------------------------------------- */
   const login = async (credentials: LoginRequest) => {
     try {
       dispatch({ type: 'AUTH_START' });
 
-      // ❗️Eliminar "/" para evitar doble barra en URL
       const response = await apiClient.post<AuthResponse>('auth/login', credentials);
 
       if (response.success && response.data) {
         const { accessToken, refreshToken, user } = response.data;
 
-        // Guardar tokens
         apiClient.setToken(accessToken);
         localStorage.setItem('refreshToken', refreshToken);
 
@@ -131,13 +111,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
-      throw error; // Re-lanzamos el error para que el componente (LoginForm) lo capture
+      throw error; 
     }
   };
 
-  /* ---------------------------------------------------------
-     ✅ Logout
-  --------------------------------------------------------- */
   const logout = () => {
     apiClient.removeToken();
     localStorage.removeItem('accessToken');
@@ -145,18 +122,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     dispatch({ type: 'AUTH_LOGOUT' });
   };
 
-  /* ---------------------------------------------------------
-     ✅ Roles y errores
-  --------------------------------------------------------- */
   const hasRole = (roles: string[]): boolean => {
     return state.user ? roles.includes(state.user.role) : false;
   };
 
   const clearError = () => dispatch({ type: 'CLEAR_ERROR' });
 
-  /* ---------------------------------------------------------
-     ✅ Valor del contexto
-  --------------------------------------------------------- */
   const value: AuthContextType = {
     ...state,
     login,

@@ -1,5 +1,4 @@
-// ✅ src/App.tsx - VERSIÓN CORREGIDA
-
+// src/App.tsx
 import { AuthProvider } from '@core/contexts/AuthContext';
 import AppRoutes from './AppRoutes';
 

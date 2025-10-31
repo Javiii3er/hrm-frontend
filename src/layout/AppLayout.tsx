@@ -45,10 +45,10 @@ const AppLayout: React.FC = () => {
       <Sidebar />
       <main className="content">
         <header className="header">
-          {/* CORRECCIÓN: Accedemos al nombre a través de 'employee' */}
+
           <h2>Bienvenido, {useAuth().user?.employee?.firstName || 'Usuario'}</h2>
         </header>
-        {/* El Outlet renderiza el componente de la ruta activa (Dashboard, Employees, etc.) */}
+    
         <div className="page-content">
           <Outlet /> 
         </div>

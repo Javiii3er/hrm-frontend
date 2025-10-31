@@ -36,7 +36,6 @@ export const useDocuments = () => {
     }
   }, []);
 
-  // ✅ UPLOAD Document
   const uploadDocument = useCallback(async (documentData: DocumentUpload): Promise<Document> => {
     setLoading(true);
     setError(null);
@@ -71,7 +70,7 @@ export const useDocuments = () => {
     }
   }, []);
 
-  // ✅ DOWNLOAD Document
+  
   const downloadDocument = useCallback(async (documentId: string, filename: string): Promise<void> => {
     try {
       const response = await apiClient.get(`/documents/${documentId}/download`, {
@@ -95,7 +94,7 @@ export const useDocuments = () => {
     }
   }, []);
 
-  // ✅ DELETE Document
+ 
   const deleteDocument = useCallback(async (documentId: string): Promise<void> => {
     setLoading(true);
     setError(null);

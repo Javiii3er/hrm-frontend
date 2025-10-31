@@ -1,35 +1,65 @@
+// src/modules/employees/components/EmployeeDetail.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEmployees } from '@modules/employees/hooks/useEmployees';
 import { Employee } from '@modules/employees/types/employee';
+import { useToast } from '@/core/contexts/ToastContext';
+import { usePayroll } from '@modules/payroll/hooks/usePayroll';
 
 const EmployeeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchEmployee, loading, error } = useEmployees();
   const [employee, setEmployee] = useState<Employee | null>(null);
+  const { showToast } = useToast();
+  const { createIndividualPayroll } = usePayroll();
+
+  // Estado del modal y formulario
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    periodStart: '',
+    periodEnd: '',
+    description: ''
+  });
 
   useEffect(() => {
-    if (id) {
-      loadEmployee();
-    }
+    if (id) loadEmployee();
   }, [id]);
 
   const loadEmployee = async () => {
     try {
       const employeeData = await fetchEmployee(id!);
       setEmployee(employeeData);
+      showToast('info', 'Detalles del empleado cargados correctamente.');
     } catch (error) {
       console.error('Error cargando empleado:', error);
+      showToast('danger', 'No se pudo cargar la información del empleado.');
     }
   };
 
   const handleEdit = () => {
     navigate(`/employees/edit/${id}`);
+    showToast('info', 'Abriendo modo de edición del empleado.');
   };
 
   const handleBack = () => {
     navigate('/employees');
+    showToast('info', 'Regresando a la lista de empleados.');
+  };
+
+  // 🧩 Nueva función: generar nómina individual
+  const handleGeneratePayroll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    try {
+      await createIndividualPayroll(id, formData);
+      showToast('success', 'Nómina individual generada correctamente.');
+      setShowModal(false);
+      setFormData({ periodStart: '', periodEnd: '', description: '' });
+    } catch (err: any) {
+      console.error(err);
+      showToast('danger', 'Error al generar nómina individual.');
+    }
   };
 
   if (loading) {
@@ -45,9 +75,10 @@ const EmployeeDetail: React.FC = () => {
   }
 
   if (error) {
+    showToast('danger', 'Ocurrió un error al obtener los datos del empleado.');
     return (
       <div className="container-fluid">
-        <div className="alert alert-danger mt-3">
+        <div className="alert alert-danger mt-3 shadow-sm border-start border-4 border-danger">
           <i className="bi bi-exclamation-triangle-fill me-2"></i>
           {error}
         </div>
@@ -60,9 +91,10 @@ const EmployeeDetail: React.FC = () => {
   }
 
   if (!employee) {
+    showToast('warning', 'Empleado no encontrado o eliminado.');
     return (
       <div className="container-fluid">
-        <div className="alert alert-warning mt-3">
+        <div className="alert alert-warning mt-3 shadow-sm border-start border-4 border-warning">
           <i className="bi bi-person-x-fill me-2"></i>
           Empleado no encontrado
         </div>
@@ -76,15 +108,17 @@ const EmployeeDetail: React.FC = () => {
 
   return (
     <div className="container-fluid">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <button className="btn btn-outline-secondary me-3" onClick={handleBack}>
-            <i className="bi bi-arrow-left me-2"></i>
+      <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+        <div className="d-flex align-items-center gap-2">
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={handleBack}
+          >
+            <i className="bi bi-arrow-left me-1"></i>
             Volver
           </button>
-          <h2 className="d-inline-block mb-0">
-            <i className="bi bi-person-badge me-2"></i>
+          <h2 className="mb-0">
+            <i className="bi bi-person-badge me-2 text-primary"></i>
             Detalles del Empleado
           </h2>
         </div>
@@ -95,9 +129,9 @@ const EmployeeDetail: React.FC = () => {
       </div>
 
       <div className="row">
-        {/* Información Principal */}
         <div className="col-lg-8">
-          <div className="card mb-4">
+          {/* Información Personal */}
+          <div className="card mb-4 shadow-sm border-light">
             <div className="card-header bg-primary text-white">
               <h5 className="mb-0">
                 <i className="bi bi-info-circle me-2"></i>
@@ -133,7 +167,7 @@ const EmployeeDetail: React.FC = () => {
           </div>
 
           {/* Información Laboral */}
-          <div className="card">
+          <div className="card shadow-sm border-light">
             <div className="card-header bg-success text-white">
               <h5 className="mb-0">
                 <i className="bi bi-briefcase me-2"></i>
@@ -157,22 +191,31 @@ const EmployeeDetail: React.FC = () => {
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">Fecha de Contratación</label>
                   <p className="form-control-plaintext">
-                    {employee.hireDate 
+                    {employee.hireDate
                       ? new Date(employee.hireDate).toLocaleDateString('es-ES')
-                      : 'No especificada'
-                    }
+                      : 'No especificada'}
                   </p>
                 </div>
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">Estado</label>
-                  <span className={`badge ${
-                    employee.status === 'ACTIVE' ? 'bg-success' :
-                    employee.status === 'INACTIVE' ? 'bg-secondary' :
-                    employee.status === 'SUSPENDED' ? 'bg-warning' : 'bg-info'
-                  } fs-6`}>
-                    {employee.status === 'ACTIVE' ? 'Activo' :
-                     employee.status === 'INACTIVE' ? 'Inactivo' :
-                     employee.status === 'SUSPENDED' ? 'Suspendido' : 'Vacaciones'}
+                  <span
+                    className={`badge ${
+                      employee.status === 'ACTIVE'
+                        ? 'bg-success'
+                        : employee.status === 'INACTIVE'
+                        ? 'bg-secondary'
+                        : employee.status === 'SUSPENDED'
+                        ? 'bg-warning text-dark'
+                        : 'bg-info'
+                    } fs-6`}
+                  >
+                    {employee.status === 'ACTIVE'
+                      ? 'Activo'
+                      : employee.status === 'INACTIVE'
+                      ? 'Inactivo'
+                      : employee.status === 'SUSPENDED'
+                      ? 'Suspendido'
+                      : 'Vacaciones'}
                   </span>
                 </div>
               </div>
@@ -180,9 +223,9 @@ const EmployeeDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Sidebar - Información Adicional */}
+        {/* Panel lateral derecho */}
         <div className="col-lg-4">
-          <div className="card">
+          <div className="card shadow-sm border-light">
             <div className="card-header bg-info text-white">
               <h5 className="mb-0">
                 <i className="bi bi-clock-history me-2"></i>
@@ -204,7 +247,7 @@ const EmployeeDetail: React.FC = () => {
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </p>
               </div>
@@ -216,15 +259,15 @@ const EmployeeDetail: React.FC = () => {
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Acciones Rápidas */}
-          <div className="card mt-4">
+          {/* Acciones rápidas */}
+          <div className="card mt-4 shadow-sm border-light">
             <div className="card-header bg-warning text-dark">
               <h5 className="mb-0">
                 <i className="bi bi-lightning me-2"></i>
@@ -241,6 +284,13 @@ const EmployeeDetail: React.FC = () => {
                   <i className="bi bi-cash-coin me-2"></i>
                   Ver Nóminas
                 </button>
+                <button
+                  className="btn btn-success text-white"
+                  onClick={() => setShowModal(true)}
+                >
+                  <i className="bi bi-cash-stack me-2"></i>
+                  Generar Nómina Individual
+                </button>
                 <button className="btn btn-outline-info">
                   <i className="bi bi-envelope me-2"></i>
                   Enviar Email
@@ -250,6 +300,66 @@ const EmployeeDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal para crear nómina individual */}
+      {showModal && (
+        <div className="modal fade show d-block" tabIndex={-1} style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content shadow">
+              <div className="modal-header bg-success text-white">
+                <h5 className="modal-title">
+                  <i className="bi bi-cash-stack me-2"></i>
+                  Generar Nómina Individual
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
+              </div>
+              <form onSubmit={handleGeneratePayroll}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Fecha de inicio</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      required
+                      value={formData.periodStart}
+                      onChange={(e) => setFormData(prev => ({ ...prev, periodStart: e.target.value }))}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Fecha de fin</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      required
+                      value={formData.periodEnd}
+                      onChange={(e) => setFormData(prev => ({ ...prev, periodEnd: e.target.value }))}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Descripción (opcional)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      maxLength={200}
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-success">
+                    <i className="bi bi-check-lg me-2"></i>
+                    Generar Nómina
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

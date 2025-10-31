@@ -6,6 +6,10 @@ export interface Payroll {
   description?: string;
   departmentId?: string;
   department?: Department;
+
+  employeeId?: string;
+  employee?: Employee;
+
   status: 'DRAFT' | 'FINALIZED' | 'PAID';
   items?: PayrollItem[];
   createdAt: string;
@@ -41,6 +45,7 @@ export interface PayrollQuery {
 }
 
 export interface PayrollResponse {
+  success: boolean;
   data: Payroll[];
   meta?: {
     totalItems: number;
@@ -50,7 +55,6 @@ export interface PayrollResponse {
   };
 }
 
-// Tipos auxiliares
 interface Department {
   id: string;
   name: string;

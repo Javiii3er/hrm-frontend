@@ -1,27 +1,23 @@
+// src/modules/employees/components/EmployeeForm.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEmployees } from '@modules/employees/hooks/useEmployees';
 import { Employee, EmployeeCreate, EmployeeUpdate } from '@modules/employees/types/employee';
-import { apiClient } from '@/core/api/client'; // 👈 Importamos para llamar al backend
-
+import { apiClient } from '@/core/api/client';
+import { useToast } from '@/core/contexts/ToastContext';
 
 interface EmployeeFormProps {
-  employee?: Employee; 
+  employee?: Employee;
   onSuccess?: () => void;
   onCancel?: () => void;
-  isModal?: boolean; 
+  isModal?: boolean;
 }
 
-const EmployeeForm: React.FC<EmployeeFormProps> = ({ 
-  employee, 
-  onSuccess, 
-  onCancel,
-  isModal = false 
-}) => {
-
-  const { id } = useParams<{ id: string }>(); 
+const EmployeeForm: React.FC<EmployeeFormProps> = ({ employee, onSuccess, onCancel, isModal = false }) => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { fetchEmployee, createEmployee, updateEmployee, loading, error } = useEmployees();
+  const { showToast } = useToast();
 
   // Estado principal del formulario
   const [formData, setFormData] = useState<EmployeeCreate | EmployeeUpdate>({
@@ -35,13 +31,9 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     hireDate: '',
     status: 'ACTIVE'
   });
-  
   const [isEdit, setIsEdit] = useState(false);
-
-  // 👇 Nuevo estado para departamentos
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
 
-  // 🔹 Cargar departamentos al iniciar
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -49,12 +41,12 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         if (res.success) setDepartments(res.data);
       } catch (error) {
         console.error('Error cargando departamentos:', error);
+        showToast('danger', 'Error al cargar los departamentos.');
       }
     };
     fetchDepartments();
-  }, []);
+  }, [showToast]);
 
-  // 🔹 Cargar datos del empleado si estamos en modo edición
   useEffect(() => {
     const loadEmployeeData = async () => {
       if (id && !employee) {
@@ -68,13 +60,14 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
             phone: employeeData.phone || '',
             departmentId: employeeData.departmentId,
             position: employeeData.position || '',
-            hireDate: employeeData.hireDate?.split('T')[0] || '', 
+            hireDate: employeeData.hireDate?.split('T')[0] || '',
             status: employeeData.status
           });
           setIsEdit(true);
         } catch (loadError) {
           console.error('Error cargando empleado para edición:', loadError);
-          if (!isModal) navigate('/employees'); 
+          showToast('warning', 'No se pudo cargar el empleado para edición.'); 
+          if (!isModal) navigate('/employees');
         }
       } else if (employee) {
         setFormData({
@@ -91,39 +84,34 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         setIsEdit(true);
       }
     };
-
     loadEmployeeData();
-  }, [id, employee, fetchEmployee, isModal, navigate]); 
+  }, [id, employee, fetchEmployee, isModal, navigate, showToast]);
 
-  // 🔹 Manejar cambios en los campos
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // 🔹 Enviar el formulario (crear o actualizar)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validación simple antes de enviar
     if (!formData.departmentId) {
       alert('Por favor, seleccione un departamento.');
+      showToast('warning', 'Por favor, seleccione un departamento.');
       return;
     }
-    
+
     try {
       if (isEdit) {
         const employeeId = id || employee?.id;
         if (employeeId) {
           await updateEmployee(employeeId, formData as EmployeeUpdate);
+          showToast('success', 'Empleado actualizado correctamente.');
         }
       } else {
         await createEmployee(formData as EmployeeCreate);
+        showToast('success', 'Empleado creado correctamente.');
       }
-      
+
       if (onSuccess) {
         onSuccess();
       } else if (!isModal) {
@@ -131,10 +119,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       }
     } catch (submitError) {
       console.error('Error guardando empleado:', submitError);
+      showToast('danger', 'Ocurrió un error al guardar el empleado.');
     }
   };
 
-  // 🔹 Cancelar o volver atrás
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
@@ -143,13 +131,10 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-  // =============================================
-  // Render del componente
-  // =============================================
   return (
     <div className="container-fluid">
       <div className="row justify-content-center">
-        <div className="col-lg-10"> 
+        <div className="col-lg-10">
           <div className="card">
             <div className="card-header bg-primary text-white">
               <div className="d-flex justify-content-between align-items-center">
@@ -157,41 +142,30 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                   <i className={`bi ${isEdit ? 'bi-pencil-square' : 'bi-person-plus-fill'} me-2`}></i>
                   {isEdit ? 'Editar Empleado' : 'Nuevo Empleado'}
                 </h4>
-
                 {!isModal && (
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn btn-light btn-sm"
                     onClick={handleCancel}
                   >
-                    <i className="bi bi-arrow-left me-1"></i>
-                    Volver
+                    <i className="bi bi-arrow-left me-1"></i> Volver
                   </button>
                 )}
               </div>
             </div>
-            
             <div className="card-body">
               {error && (
                 <div className="alert alert-danger" role="alert">
-                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                  {error}
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i> {error}
                 </div>
               )}
-
               <form onSubmit={handleSubmit}>
                 <div className="row g-3">
-
-                  {/* =====================
-                      INFORMACIÓN PERSONAL
-                  ====================== */}
                   <div className="col-12">
                     <h5 className="border-bottom pb-2 mb-3">
-                      <i className="bi bi-person me-2"></i>
-                      Información Personal
+                      <i className="bi bi-person me-2"></i> Información Personal
                     </h5>
                   </div>
-                  
                   <div className="col-md-6">
                     <label htmlFor="nationalId" className="form-label">
                       Cédula <span className="text-danger">*</span>
@@ -204,7 +178,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       value={formData.nationalId}
                       onChange={handleChange}
                       required
-                      disabled={loading || isEdit} 
+                      disabled={loading || isEdit}
                     />
                     {isEdit && (
                       <div className="form-text text-muted">
@@ -212,7 +186,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       </div>
                     )}
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="email" className="form-label">
                       Email <span className="text-danger">*</span>
@@ -228,7 +201,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       disabled={loading}
                     />
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="firstName" className="form-label">
                       Nombres <span className="text-danger">*</span>
@@ -244,7 +216,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       disabled={loading}
                     />
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="lastName" className="form-label">
                       Apellidos <span className="text-danger">*</span>
@@ -260,7 +231,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       disabled={loading}
                     />
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="phone" className="form-label">
                       Teléfono
@@ -275,18 +245,11 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       disabled={loading}
                     />
                   </div>
-
-                  {/* =====================
-                      INFORMACIÓN LABORAL
-                  ====================== */}
                   <div className="col-12 mt-4">
                     <h5 className="border-bottom pb-2 mb-3">
-                      <i className="bi bi-briefcase me-2"></i>
-                      Información Laboral
+                      <i className="bi bi-briefcase me-2"></i> Información Laboral
                     </h5>
                   </div>
-
-                  {/* 👇 AQUÍ CAMBIAMOS EL INPUT POR UN SELECT */}
                   <div className="col-md-6">
                     <label htmlFor="departmentId" className="form-label">
                       Departamento <span className="text-danger">*</span>
@@ -308,7 +271,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       ))}
                     </select>
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="position" className="form-label">
                       Posición
@@ -324,7 +286,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       placeholder="Cargo del empleado"
                     />
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="hireDate" className="form-label">
                       Fecha de Contratación
@@ -339,7 +300,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                       disabled={loading}
                     />
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="status" className="form-label">
                       Estado <span className="text-danger">*</span>
@@ -360,8 +320,6 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                     </select>
                   </div>
                 </div>
-
-                {/* BOTONES */}
                 <div className="row mt-4">
                   <div className="col-12">
                     <div className="d-flex gap-2 justify-content-end">
@@ -371,10 +329,8 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
                         onClick={handleCancel}
                         disabled={loading}
                       >
-                        <i className="bi bi-x-circle me-2"></i>
-                        {isModal ? 'Cancelar' : 'Volver'}
+                        <i className="bi bi-x-circle me-2"></i> {isModal ? 'Cancelar' : 'Volver'}
                       </button>
-                      
                       <button
                         type="submit"
                         className="btn btn-primary"

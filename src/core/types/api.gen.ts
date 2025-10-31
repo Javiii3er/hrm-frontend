@@ -1,10 +1,4 @@
 /* eslint-disable */
-// =============================================
-// TIPOS PARA FRONTEND - GENERADOS RÁPIDAMENTE
-// Basados en la estructura actual del backend
-// =============================================
-
-// Utilizamos 'unknown' en lugar de 'any' para mejor tipado, aunque se sigue silenciando el error.
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data: T;
@@ -22,12 +16,10 @@ export interface ApiError {
   error: {
     code: string;
     message: string;
-    // Usamos 'unknown' en lugar de 'any' aquí
     details?: unknown; 
   };
 }
 
-// ==================== AUTENTICACIÓN ====================
 export interface LoginRequest {
   email: string;
   password: string;
@@ -49,7 +41,6 @@ export interface User {
   updatedAt: string;
 }
 
-// ==================== EMPLEADOS ====================
 export interface Employee {
   id: string;
   nationalId: string;
@@ -67,10 +58,8 @@ export interface Employee {
   user?: User;
 }
 
-// NUEVO TIPO REQUERIDO: Si la API devuelve una estructura con paginación
 export interface EmployeeListResponse {
   employees: Employee[];
-  // Los metadatos de paginación pueden estar aquí o en el ApiResponse.meta
   meta?: {
     totalItems: number;
     page: number;
@@ -101,7 +90,6 @@ export interface EmployeeQuery {
   status?: string;
 }
 
-// ==================== DEPARTAMENTOS ====================
 export interface Department {
   id: string;
   name: string;
@@ -136,7 +124,6 @@ export interface PayrollItem {
   employee?: Employee;
   grossAmount: number;
   netAmount: number;
-  // Usamos Record<string, number> para tipar el objeto de deducciones
   deductions: Record<string, number>; 
   createdAt: string;
 }
@@ -150,7 +137,6 @@ export interface PayrollQuery {
   status?: string;
 }
 
-// ==================== DOCUMENTOS ====================
 export interface Document {
   id: string;
   employeeId: string;
@@ -166,7 +152,6 @@ export interface Document {
   updatedAt: string;
 }
 
-// ==================== USUARIOS ====================
 export interface UserQuery {
   page?: number;
   pageSize?: number;
@@ -174,7 +159,6 @@ export interface UserQuery {
   role?: string;
 }
 
-// ==================== CLIENTE API ====================
 export interface ApiClientConfig {
   baseURL: string;
   token?: string;
@@ -189,19 +173,16 @@ export class ApiClient {
     this.token = config.token;
   }
 
-  // CORRECCIÓN CLAVE: setToken ahora acepta string | undefined
   setToken(token: string | undefined) {
     this.token = token;
   }
 
-  // FUNCIÓN REQUEST AJUSTADA PARA SOLUCIONAR EL ERROR 7053
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
-    // Usamos Record<string, string> para permitir indexación y luego convertimos a HeadersInit
+
     const headers: Record<string, string> = { 
       'Content-Type': 'application/json',
-      // Copiamos los headers existentes, forzando el tipo para evitar el error TS7053
+
       ...(options.headers as Record<string, string> || {}), 
     };
 
@@ -211,20 +192,19 @@ export class ApiClient {
 
     const response = await fetch(url, {
       ...options,
-      headers: headers as HeadersInit, // Pasamos el objeto ajustado a fetch
+      headers: headers as HeadersInit,
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      // Lanzamos un error con un mensaje útil
+
       throw new Error(data.error?.message || `Request failed with status ${response.status}`);
     }
 
     return data;
   }
 
-  // Auth methods
   async login(credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> {
     return this.request<AuthResponse>('/auth/login', {
       method: 'POST',
@@ -236,10 +216,9 @@ export class ApiClient {
     return this.request<User>('/auth/me');
   }
 
-  // Employee methods
-  // CAMBIO EN LA RESPUESTA: Usamos EmployeeListResponse para manejar paginación
+
   async getEmployees(params?: EmployeeQuery): Promise<ApiResponse<EmployeeListResponse>> {
-    // AJUSTE: Usamos Record<string, any> para que URLSearchParams pueda manejar el objeto
+
     const query = new URLSearchParams(params as Record<string, any>).toString(); 
     return this.request<EmployeeListResponse>('/employees' + (query ? `?${query}` : ''));
   }
@@ -268,9 +247,8 @@ export class ApiClient {
     });
   }
 
-  // Payroll methods
   async getPayrolls(params?: PayrollQuery): Promise<ApiResponse<Payroll[]>> {
-    // AJUSTE: Usamos Record<string, any>
+
     const query = new URLSearchParams(params as Record<string, any>).toString();
     return this.request<Payroll[]>(`/payroll${query ? `?${query}` : ''}`);
   }
@@ -282,9 +260,9 @@ export class ApiClient {
     });
   }
 
-  // User methods
+ 
   async getUsers(params?: UserQuery): Promise<ApiResponse<User[]>> {
-    // AJUSTE: Usamos Record<string, any>
+   
     const query = new URLSearchParams(params as Record<string, any>).toString();
     return this.request<User[]>(`/users${query ? `?${query}` : ''}`);
   }

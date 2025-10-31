@@ -8,8 +8,7 @@ export class ApiClient {
   constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:4000/api') {
     this.client = axios.create({
       baseURL,
-      timeout: 30000,
-      // ❌ No forzamos Content-Type aquí (lo hace el navegador si es FormData)
+      timeout: 60000,
     });
 
     this.setupInterceptors();
@@ -57,12 +56,11 @@ export class ApiClient {
     return response.data;
   }
 
-  // ✅ POST detecta FormData automáticamente
   async post<T>(url: string, data?: unknown, config: any = {}): Promise<ApiResponse<T>> {
     const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
 
     const headers = isFormData
-      ? { ...config.headers } // navegador agrega multipart automáticamente
+      ? { ...config.headers } 
       : { 'Content-Type': 'application/json', ...config.headers };
 
     const response = await this.client.post<ApiResponse<T>>(url, data, {

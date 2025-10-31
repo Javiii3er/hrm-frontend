@@ -42,11 +42,11 @@ const LoginForm: React.FC = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      console.log('➡️ Enviando credenciales:', data);
+      console.log('Enviando credenciales:', data);
       await login(data);
-      console.log('✅ Login exitoso');
+      console.log('Login exitoso');
     } catch (error) {
-      console.error('❌ Error al iniciar sesión:', error);
+      console.error('Error al iniciar sesión:', error);
     }
   };
 
@@ -63,7 +63,7 @@ const LoginForm: React.FC = () => {
     >
       <div className="card shadow-lg border-0 rounded-4" style={{ width: '100%', maxWidth: '420px', backgroundColor: 'white' }}>
         <div className="card-body p-5">
-          {/* Logo y título */}
+
           <div className="text-center mb-4">
             <div
               className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
@@ -79,9 +79,9 @@ const LoginForm: React.FC = () => {
             <p className="text-muted small mb-0">Gestión de Recursos Humanos</p>
           </div>
 
-          {/* Formulario */}
+
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            {/* Email */}
+
             <div className="mb-3">
               <label htmlFor="email" className="form-label fw-semibold">
                 Correo Electrónico
@@ -97,7 +97,6 @@ const LoginForm: React.FC = () => {
               {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
             </div>
 
-            {/* Contraseña */}
             <div className="mb-4">
               <label htmlFor="password" className="form-label fw-semibold">
                 Contraseña
@@ -113,7 +112,6 @@ const LoginForm: React.FC = () => {
               {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
             </div>
 
-            {/* Botón */}
             <button
               type="submit"
               className="btn btn-primary w-100 py-2 fs-5 fw-semibold rounded-3"
@@ -133,7 +131,6 @@ const LoginForm: React.FC = () => {
             </button>
           </form>
 
-          {/* Línea divisoria */}
           <div className="text-center my-4">
             <hr className="my-3" />
             <small className="text-muted">Acceso exclusivo al personal autorizado</small>
