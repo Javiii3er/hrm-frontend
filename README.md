@@ -1,4 +1,4 @@
-# 💼 HRM Frontend — Sistema de Gestión de Recursos Humanos y Nóminas
+# HRM Frontend — Sistema de Gestión de Recursos Humanos y Nóminas
 
 Aplicación web desarrollada con **React 18**, **TypeScript** y **Vite**, que actúa como interfaz de usuario del **Sistema HRM**.  
 Su objetivo es ofrecer una plataforma moderna, segura y eficiente para la **gestión de empleados, nóminas, usuarios, documentos y reportes**, en integración directa con el backend construido en **Node.js + Express + Prisma**.
@@ -52,23 +52,23 @@ Su objetivo es ofrecer una plataforma moderna, segura y eficiente para la **gest
 ---
 
 ##  Estructura del Proyecto
+
 hrm-frontend/
-├── public/                 # Recursos estáticos
+├── public/                     # Recursos estáticos
 ├── src/
-│   ├── core/               # Núcleo del sistema (API, contextos, hooks)
-│   │   └── api/client.ts   # Cliente Axios centralizado
-│   ├── components/         # Componentes reutilizables de UI
-│   ├── layout/             # Layouts y navegación principal
-│   ├── modules/            # Módulos funcionales (auth, employees, payroll, etc.)
-│   ├── styles/             # Archivos de estilos globales
-│   ├── App.tsx             # Componente raíz
-│   ├── AppRoutes.tsx       # Definición de rutas (React Router 6)
-│   └── main.tsx            # Punto de entrada
-├── .env                    # Variables de entorno
+│   ├── core/                   # Núcleo del sistema (API, contextos, hooks)
+│   │   └── api/client.ts       # Cliente Axios centralizado
+│   ├── components/             # Componentes reutilizables de UI
+│   ├── layout/                 # Layouts y navegación principal
+│   ├── modules/                # Módulos funcionales (auth, employees, payroll, etc.)
+│   ├── styles/                 # Archivos de estilos globales
+│   ├── App.tsx                 # Componente raíz
+│   ├── AppRoutes.tsx           # Definición de rutas (React Router 6)
+│   └── main.tsx                # Punto de entrada
+├── .env                        # Variables de entorno
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
-
 
 
 ---
