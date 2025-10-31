@@ -5,7 +5,7 @@ import { ApiResponse, ApiError } from '../types/global';
 export class ApiClient {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:4000/api') {
+ constructor(baseURL: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api') {
     this.client = axios.create({
       baseURL,
       timeout: 60000,
