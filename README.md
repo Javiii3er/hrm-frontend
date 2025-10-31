@@ -68,7 +68,7 @@ hrm-frontend/
 ├── .env                        # Variables de entorno
 ├── package.json
 ├── tsconfig.json
-└── vite.config.ts
+└── vite.config.ts 
 
 
 ---
