@@ -87,10 +87,18 @@ hrm-frontend/
 ##  Integración con el Backend
 
 Este frontend se comunica directamente con el backend del proyecto **HRM**:
-http://localhost:4000/api
+https://hrm-backend-o1nu.onrender.com/api 
 
 ---
+## Entornos Disponibles
 
+| Entorno | URL | Descripción |  
+|----------|-----|-------------|  
+| Local | http://localhost:5173 | Desarrollo local con Vite |  
+| Producción | https://hrm-frontend-sigma-three.vercel.app | Versión en línea (Vercel) |
+
+
+---
 ### Cliente HTTP centralizado
 La comunicación se realiza mediante el cliente `apiClient` (`src/core/api/client.ts`):
 
