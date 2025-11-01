@@ -35,6 +35,17 @@ Su objetivo es ofrecer una plataforma moderna, segura y eficiente para la **gest
 | Control de dependencias | npm |
 
 ---
+## Despliegue del Sistema HRM
+
+| Servicio | URL |  
+|-----------|-----|  
+| Frontend (Vercel) | [https://hrm-frontend-sigma-three.vercel.app](https://hrm-frontend-sigma-three.vercel.app) |  
+| Backend (Render) | [https://hrm-backend-o1nu.onrender.com](https://hrm-backend-o1nu.onrender.com) |  
+| Base de Datos (Railway - MySQL) | *Configurada en Render, no es pública* |  
+  
+Base de datos alojada en Railway (MySQL), conectada mediante variables de entorno seguras.
+
+---
 
 ##  Autenticación y Seguridad
 
